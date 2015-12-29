@@ -228,7 +228,7 @@ HTTPAccessory.prototype = {
 
         // If achromatic, then update brightness, otherwise, update HSL as RGB
         if (!this.color) {
-            var url = this.brightness.set_url.replace("%b", level);
+            var url = this.brightness.set_url.replace("%s", level);
 
             this._httpRequest(url, "", this.brightness.http_method, function(error, response, body) {
                 if (error) {
@@ -352,7 +352,7 @@ HTTPAccessory.prototype = {
      * @param {function} callback - The callback that handles the response.
      */
     setSaturation: function(level, callback) {
-        if (this.color && typeof this.color.url !== 'string') {
+        if (this.color && typeof this.color.set_url !== 'string') {
             this.log.warn("Ignoring request; problem with 'color' variables.");
             callback(new Error("color issue."));
             return;
@@ -374,7 +374,7 @@ HTTPAccessory.prototype = {
         var g = this._decToHex(rgb[1]);
         var b = this._decToHex(rgb[2]);
 
-        var url = this.color.set_url.replace("%c", r + g + b);
+        var url = this.color.set_url.replace("%s", r + g + b);
 
         this.log("Setting RGB to %s ...", r + g + b);
 
