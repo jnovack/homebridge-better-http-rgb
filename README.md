@@ -32,9 +32,10 @@ The following is an overview of the structure of your HTTP accessory.
 Both `powerOn` and `powerOff` can either be a `string` or an `object`.  If a
 `string` is provided it is filled in as the `url` and the `body` will be blank.
 
-Additionally, both `brightness` and `color` share the same structure, they can
-either be a `string` or an `object`.  If it is a `string`, it is filled in as
-the `status` and the other fields are left blank. In this instance, you can
+Additionally, both `brightness` and `color` share the same structure (with the
+exception that the `color` structure allows for a `.brightness` variable), they
+can either be a `string` or an `object`.  If it is a `string`, it is filled in
+as the `status` and the other fields are left blank. In this instance, you can
 only read the settings, you may not change them.
 
 
@@ -57,11 +58,12 @@ only read the settings, you may not change them.
             }
         },
 
-        "brightness": string-or-object,
 
+        "brightness": string-or-object,
         "color": {
             "status": url-status,
             "url": url-optional,
+            "brightness": boolean,
             "http_method": string-optional
         }
     }
@@ -89,7 +91,8 @@ only read the settings, you may not change them.
 
             "color": {
                 "status": "http://localhost/api/v1/set",
-                "url": "http://localhost/api/v1/set/%s"
+                "url": "http://localhost/api/v1/set/%s",
+                "brightness": true
             }
         }
     ]
@@ -102,3 +105,7 @@ string with no HTML markup.
 * `switch.status` expects `0` for Off, and `1` for On.
 * `brightness.status` expects a number from 0 to 100.
 * `color.status` expects a 6-digit hexidemial number.
+
+# TODO
+
+* Allow `brightness` WITH `color`

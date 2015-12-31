@@ -59,11 +59,14 @@ function HTTPAccessory(log, config) {
         this.color.status              = config.color.status;
         this.color.set_url             = config.color.url                 || this.color.status;
         this.color.http_method         = config.color.http_method         || this.http_method;
+        this.color.brightness          = config.color.brightness;
         this.cache.hue = 0;
         this.cache.saturation = 0;
     } else {
         this.color = false;
     }
+
+    this.has = { brightness: this.brightness || (typeof this.color === 'object' && this.color.brightness) };
 
 }
 
@@ -86,6 +89,7 @@ HTTPAccessory.prototype = {
             .setCharacteristic(Characteristic.SerialNumber, "HTTP Serial Number");
 
         if (this.service == "Switch") {
+            this.log('creating Switch');
             var switchService = new Service.Switch(this.name);
 
             if (this.switchHandling == "yes") {
@@ -101,9 +105,10 @@ HTTPAccessory.prototype = {
             return [switchService];
 
         } else if (this.service == "Light") {
+            this.log('creating Lightbulb');
             var lightbulbService = new Service.Lightbulb(this.name);
 
-            if (this.switchHandling == "yes") {
+            if (typeof this.switch.status === 'string') {
                 lightbulbService
                     .getCharacteristic(Characteristic.On)
                     .on('get', this.getPowerState.bind(this))
@@ -114,7 +119,8 @@ HTTPAccessory.prototype = {
                     .on('set', this.setPowerState.bind(this));
             }
 
-            if (this.brightnessHandling == "yes") {
+            if (this.has.brightness) {
+                this.log('... adding Brightness');
                 lightbulbService
                     .addCharacteristic(new Characteristic.Brightness())
                     .on('get', this.getBrightness.bind(this))
@@ -123,7 +129,7 @@ HTTPAccessory.prototype = {
 
             // Handle color
             if (this.color) {
-                this.log('Ted Turnerizing(tm)...');
+                this.log('... Ted Turnerizing(tm)');
                 lightbulbService
                     .addCharacteristic(new Characteristic.Hue())
                     .on('get', this.getHue.bind(this))
@@ -178,11 +184,15 @@ HTTPAccessory.prototype = {
         if (state) {
             url = this.switch.powerOn.set_url;
             body = this.switch.powerOn.body;
-            this.log("Setting power to ON");
+            // this.log("Setting power to ON");
         } else {
             url = this.switch.powerOff.set_url;
             body = this.switch.powerOff.body;
-            this.log("Setting power to OFF");
+            // this.log("Setting power to OFF");
+        }
+
+        if (state && this.color) {
+            this._setRGB(callback);
         }
 
         this._httpRequest(url, body, this.http_method, function(error, response, responseBody) {
@@ -190,7 +200,7 @@ HTTPAccessory.prototype = {
                 this.log('setPowerState() failed: %s', error.message);
                 callback(error);
             } else {
-                this.log('setPowerState() succeeded!');
+                this.log('setPowerState() successfully set to %s', state ? "ON" : "OFF");
                 callback();
             }
         }.bind(this));
@@ -198,32 +208,37 @@ HTTPAccessory.prototype = {
 
     // Brightness
     getBrightness: function(callback) {
-        if (!this.brightness) {
-            this.log.warn("Ignoring request; No brightness not defined.");
+        if (!this.has.brightness) {
+            this.log.warn("Ignoring request; No brightness defined.");
             callback(new Error("Brightness not defined."));
             return;
         }
-        this.log("Getting Brightness level");
+        // this.log("Getting Brightness level");
 
-        this._httpRequest(this.brightness.status, "", "GET", function(error, response, responseBody) {
-            if (error) {
-                this.log('HTTP get brightness function failed: %s', error.message);
-                callback(error);
-            } else {
-                var level = parseInt(responseBody);
-                this.log("brightness state is currently %s", level);
-                callback(null, level);
-            }
-        }.bind(this));
+        if (this.brightness) {
+
+            this._httpRequest(this.brightness.status, "", "GET", function(error, response, responseBody) {
+                if (error) {
+                    this.log('getBrightness() failed: %s', error.message);
+                    callback(error);
+                } else {
+                    var level = parseInt(responseBody);
+                    this.log("brightness state is currently %s", level);
+                    callback(null, level);
+                }
+            }.bind(this));
+        } else {
+            callback(null, this.cache.brightness);
+        }
     },
 
     setBrightness: function(level, callback) {
-        if (!this.brightness) {
-            this.log.warn("Ignoring request; No brightness not defined.");
+        if (!this.has.brightness) {
+            this.log.warn("Ignoring request; No brightness defined.");
             callback(new Error("Brightness not defined."));
             return;
         }
-        this.log("Setting brightness to %s", level);
+        // this.log("Setting Brightness to %s", level);
         this.cache.brightness = level;
 
         // If achromatic, then update brightness, otherwise, update HSL as RGB
@@ -235,12 +250,12 @@ HTTPAccessory.prototype = {
                     this.log('setBrightness() failed: %s', error);
                     callback(error);
                 } else {
-                    this.log('setBrightness() succeeded!');
+                    this.log('setBrightness() successfully set to %s', level);
                     callback();
                 }
             }.bind(this));
         } else {
-            _setRGB(callback);
+            this._setRGB(callback);
         }
     },
 
@@ -255,8 +270,8 @@ HTTPAccessory.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log("Getting hue ...");
-        var url = this.color.url;
+        // this.log("Getting hue ...");
+        var url = this.color.status;
 
         this._httpRequest(url, "", "GET", function(error, response, responseBody) {
             if (error) {
@@ -321,7 +336,7 @@ HTTPAccessory.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log("Getting saturation ...");
+        // this.log("Getting saturation ...");
         var url = this.color.status;
 
         this._httpRequest(url, "", "GET", function(error, response, responseBody) {
@@ -357,34 +372,39 @@ HTTPAccessory.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log("Setting Hue to %s ...", level);
+        this.log("Setting Saturation to %s ...", level);
         this.cache.saturation = level;
 
-        if (this.brightness) {
+        if (!this.has.brightness) {
             callback();
+            process.nextTick(function() { this._setRGB(callback); }.bind(this) );
         } else {
-            this.log('Brightness is set, deferring update.');
-            _setRGB(callback);
+            this.log('... has.brightness is set, deferring update.');
+            callback();
         }
     },
 
+    /**
+     * Sets the rgb of the device based on the cached hsb.
+     *
+     * @param {function} callback - The callback that handles the response.
+     */
     _setRGB: function(callback) {
-        var rgb = _hslToRgb(this.cache.hue, this.cache.saturation, this.cache.brightness);
-        var r = this._decToHex(rgb[0]);
-        var g = this._decToHex(rgb[1]);
-        var b = this._decToHex(rgb[2]);
+        var rgb = this._hsvToRgb(this.cache.hue, this.cache.saturation, this.cache.brightness);
+        var r = this._decToHex(rgb.r);
+        var g = this._decToHex(rgb.g);
+        var b = this._decToHex(rgb.b);
 
         var url = this.color.set_url.replace("%s", r + g + b);
 
-        this.log("Setting RGB to %s ...", r + g + b);
+        // this.log("Setting RGB to %s ...", r + g + b);
 
-        if (!this.brightnessHandling)
         this._httpRequest(url, "", this.color.http_method, function(error, response, body) {
             if (error) {
-                this.log('... setSaturation() failed: %s', error);
+                this.log('... _setRGB() failed: %s', error);
                 callback(error);
             } else {
-                this.log('... setSaturation() succeeded!');
+                this.log('... _setRGB() succeeded to #%s', r + g + b);
                 callback();
             }
         }.bind(this));
@@ -410,8 +430,8 @@ HTTPAccessory.prototype = {
     },
 
     /**
-     * Converts an HSL color value to RGB. Conversion formula
-     * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+     * Converts an HSV color value to RGB. Conversion formula
+     * adapted from http://stackoverflow.com/a/17243070/2061684
      * Assumes h in [0..360], and s and l in [0..100] and
      * returns r, g, and b in [0..255].
      *
@@ -420,33 +440,28 @@ HTTPAccessory.prototype = {
      * @param   Number  l       The lightness
      * @return  Array           The RGB representation
      */
-    _hslToRgb: function(h, s, l){
+    _hsvToRgb: function(h, s, v) {
+        var r, g, b, i, f, p, q, t;
+
         h /= 360;
         s /= 100;
-        l /= 100;
+        v /= 100;
 
-        var r, g, b;
-
-        if(s === 0){
-            r = g = b = l; // achromatic
-        }else{
-            var hue2rgb = function hue2rgb(p, q, t){
-                if(t < 0) t += 1;
-                if(t > 1) t -= 1;
-                if(t < 1/6) return p + (q - p) * 6 * t;
-                if(t < 1/2) return q;
-                if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                return p;
-            };
-
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1/3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1/3);
+        i = Math.floor(h * 6);
+        f = h * 6 - i;
+        p = v * (1 - s);
+        q = v * (1 - f * s);
+        t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+            case 0: r = v; g = t; b = p; break;
+            case 1: r = q; g = v; b = p; break;
+            case 2: r = p; g = v; b = t; break;
+            case 3: r = p; g = q; b = v; break;
+            case 4: r = t; g = p; b = v; break;
+            case 5: r = v; g = p; b = q; break;
         }
-
-        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        var rgb = { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+        return rgb;
     },
 
     /**
