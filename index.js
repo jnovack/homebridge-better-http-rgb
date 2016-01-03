@@ -1,14 +1,29 @@
 var Service, Characteristic;
 var request = require("request");
 
+/**
+ * @module homebridge
+ * @param {object} homebridge Export the functions required to create a
+ *                            new instance of this plugin.
+ */
 module.exports = function(homebridge){
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-http", "HTTP", HTTPAccessory);
+    homebridge.registerAccessory("homebridge-http-blinkstick", "HTTP-Blinkstick", HTTPBlinkstick);
 };
 
+/**
+ * Parse the config and instantiate the object.
+ *
+ * @summary Constructor
+ * @constructor
+ * @param {function} log Logging function
+ * @param {object} config Your configuration object
+ */
+function HTTPBlinkstick(log, config) {
 
-function HTTPAccessory(log, config) {
+    // The logging function is required if you want your function to output
+    // any information to the console in a controlled and organized manner.
     this.log = log;
 
     this.service                       = config.service                   || "Switch";
@@ -20,22 +35,24 @@ function HTTPAccessory(log, config) {
     this.sendimmediately               = config.sendimmediately           || "";
 
     this.switch = { powerOn: {}, powerOff: {} };
-    this.switch.status                 = config.switch.status;
+    if (typeof config.switch === 'object') {
+        this.switch.status                 = config.switch.status;
 
-    // Intelligently handle if config.switch.powerOn is an object or string.
-    if (typeof config.switch.powerOn === 'object') {
-        this.switch.powerOn.set_url    = config.switch.powerOn.url;
-        this.switch.powerOn.body       = config.switch.powerOn.body;
-    } else {
-        this.switch.powerOn.set_url    = config.switch.powerOn;
-    }
+        // Intelligently handle if config.switch.powerOn is an object or string.
+        if (typeof config.switch.powerOn === 'object') {
+            this.switch.powerOn.set_url    = config.switch.powerOn.url;
+            this.switch.powerOn.body       = config.switch.powerOn.body;
+        } else {
+            this.switch.powerOn.set_url    = config.switch.powerOn;
+        }
 
-    // Intelligently handle if config.switch.powerOff is an object or string.
-    if (typeof config.switch.powerOff === 'object') {
-        this.switch.powerOff.set_url   = config.switch.powerOff.url;
-        this.switch.powerOff.body      = config.switch.powerOff.body;
-    } else {
-        this.switch.powerOff.set_url   = config.switch.powerOff;
+        // Intelligently handle if config.switch.powerOff is an object or string.
+        if (typeof config.switch.powerOff === 'object') {
+            this.switch.powerOff.set_url   = config.switch.powerOff.url;
+            this.switch.powerOff.body      = config.switch.powerOff.body;
+        } else {
+            this.switch.powerOff.set_url   = config.switch.powerOff;
+        }
     }
 
     // Local caching of HSB color space for one RGB callback
@@ -70,7 +87,11 @@ function HTTPAccessory(log, config) {
 
 }
 
-HTTPAccessory.prototype = {
+/**
+ *
+ * @augments HTTPBlinkstick
+
+HTTPBlinkstick.prototype = {
 
     //** Required Functions **//
     identify: function(callback) {
@@ -88,61 +109,115 @@ HTTPAccessory.prototype = {
             .setCharacteristic(Characteristic.Model, "HTTP Model")
             .setCharacteristic(Characteristic.SerialNumber, "HTTP Serial Number");
 
-        if (this.service == "Switch") {
-            this.log('creating Switch');
-            var switchService = new Service.Switch(this.name);
+        switch (this.service) {
+            case "Switch":
+                this.log('creating Switch');
+                var switchService = new Service.Switch(this.name);
 
-            if (this.switchHandling == "yes") {
-                switchService
-                    .getCharacteristic(Characteristic.On)
-                    .on('get', this.getPowerState.bind(this))
-                    .on('set', this.setPowerState.bind(this));
-            } else {
-                switchService
-                    .getCharacteristic(Characteristic.On)
-                    .on('set', this.setPowerState.bind(this));
-            }
-            return [switchService];
+                if (this.switch.powerOn.status) {
+                    switchService
+                        .getCharacteristic(Characteristic.On)
+                        .on('get', this.getPowerState.bind(this))
+                        .on('set', this.setPowerState.bind(this));
+                } else {
+                    switchService
+                        .getCharacteristic(Characteristic.On)
+                        .on('set', this.setPowerState.bind(this));
+                }
+                return [switchService];
 
-        } else if (this.service == "Light") {
-            this.log('creating Lightbulb');
-            var lightbulbService = new Service.Lightbulb(this.name);
+            case "Light":
+                this.log('creating Light');
+                var lightbulbService = new Service.Lightbulb(this.name);
 
-            if (typeof this.switch.status === 'string') {
-                lightbulbService
-                    .getCharacteristic(Characteristic.On)
-                    .on('get', this.getPowerState.bind(this))
-                    .on('set', this.setPowerState.bind(this));
-            } else {
-                lightbulbService
-                    .getCharacteristic(Characteristic.On)
-                    .on('set', this.setPowerState.bind(this));
-            }
+                if (this.switch.powerOn.status) {
+                    lightbulbService
+                        .getCharacteristic(Characteristic.On)
+                        .on('get', this.getPowerState.bind(this))
+                        .on('set', this.setPowerState.bind(this));
+                } else {
+                    lightbulbService
+                        .getCharacteristic(Characteristic.On)
+                        .on('set', this.setPowerState.bind(this));
+                }
 
-            if (this.has.brightness) {
-                this.log('... adding Brightness');
-                lightbulbService
-                    .addCharacteristic(new Characteristic.Brightness())
-                    .on('get', this.getBrightness.bind(this))
-                    .on('set', this.setBrightness.bind(this));
-            }
+                if (this.has.brightness) {
+                    this.log('... adding Brightness');
+                    lightbulbService
+                        .addCharacteristic(new Characteristic.Brightness())
+                        .on('get', this.getBrightness.bind(this))
+                        .on('set', this.setBrightness.bind(this));
+                }
+                // Handle color
+                if (this.color) {
+                    this.log('... Ted Turnerizing(tm)');
+                    lightbulbService
+                        .addCharacteristic(new Characteristic.Hue())
+                        .on('get', this.getHue.bind(this))
+                        .on('set', this.setHue.bind(this));
 
-            // Handle color
-            if (this.color) {
-                this.log('... Ted Turnerizing(tm)');
-                lightbulbService
-                    .addCharacteristic(new Characteristic.Hue())
-                    .on('get', this.getHue.bind(this))
-                    .on('set', this.setHue.bind(this));
+                    lightbulbService
+                        .addCharacteristic(new Characteristic.Saturation())
+                        .on('get', this.getSaturation.bind(this))
+                        .on('set', this.setSaturation.bind(this));
+                }
 
-                lightbulbService
-                    .addCharacteristic(new Characteristic.Saturation())
-                    .on('get', this.getSaturation.bind(this))
-                    .on('set', this.setSaturation.bind(this));
-            }
+                return [lightbulbService];
 
-            return [informationService, lightbulbService];
-        }
+            /* stub
+            case "Lock":
+                var lockService = new Service.LockMechanism(this.name);
+
+                lockService
+                    .getCharacteristic(Characteristic.LockCurrent)
+                    .on('get', this.getLockCurrent.bind(this))
+                    .on('set', this.setLockCurrent.bind(this));
+
+                lockService
+                    .getCharacteristic(Characteristic.LockTarget)
+                    .on('get', this.getLockTarget.bind(this))
+                    .on('set', this.setLockTarget.bind(this));
+
+                return [lockService];
+
+            case "Smoke":
+                var smokeService = new Service.SmokeSensor(this.name);
+
+                smokeService
+                    .getCharacteristic(Characteristic.SmokeDetected)
+                    .on('set', this.getSmokeDetected.bind(this));
+
+                return [smokeService];
+
+            case "Motion":
+                var motionService = new Service.MotionSensor(this.name);
+
+                motionService
+                    .getCharacteristic(Characteristic.MotionDetected)
+                    .on('get', this.getMotionDetected.bind(this));
+
+                return [motionService];
+
+            case "Temp":
+                var temperatureService = new Service.TemperatureSensor(this.name);
+
+                temperatureService
+                    .getCharacteristic(Characteristic.CurrentTemperature)
+                    .on('get', this.getTemperature.bind(this));
+
+                var humidityService = new Service.HumiditySensor(this.name);
+                humidityService
+                    .getCharacteristic(Characteristic.CurrentRelativeHumidity)
+                    .on('get', this.getHumidity.bind(this));
+
+                return [temperatureService, humidityService];
+
+            */
+
+            default:
+                return [informationService];
+
+        } // end switch
     },
 
     //** Custom Functions **//
@@ -163,8 +238,7 @@ HTTPAccessory.prototype = {
                 this.log('getPowerState() failed: %s', error.message);
                 callback(error);
             } else {
-                var binaryState = parseInt(responseBody);
-                var powerOn = binaryState > 0;
+                var powerOn = parseInt(responseBody) > 0;
                 this.log("Power is currently %s", powerOn ? "ON" : "OFF");
                 callback(null, powerOn);
             }

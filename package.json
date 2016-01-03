@@ -1,7 +1,7 @@
 {
-  "name": "homebridge-http",
+  "name": "homebridge-http-blinkstick",
   "version": "1.0.0",
-  "description": "http(s) plugin for Homebridge: https://github.com/nfarina/homebridge",
+  "description": "plugin to control a web-based RGB LED Strip for Homebridge",
   "license": "ISC",
   "keywords": [
     "homebridge-plugin"
@@ -11,17 +11,34 @@
     "homebridge": ">=0.2.0"
   },
   "author": {
-    "name": "Adrian Rudman"
+    "name": "Justin J. Novack",
+    "email": "jnovack@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "Adrian Rudman"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/rudders/homebridge-http.git"
+    "url": "git://github.com/jnovack/homebridge-http-blinkstick.git"
   },
+  "scripts": {
+    "lint": "grunt lint",
+    "test": "mocha test/simple.js",
+    "prepublish": "grunt lint"
+  },
+  "preferGlobal": true,
   "dependencies": {
     "request": "^2.65.0"
   },
   "devDependencies": {
+    "chai": "^3.4.1",
+    "chai-things": "^0.2.0",
+    "express": "^4.13.3",
     "grunt": "^0.4.5",
-    "grunt-contrib-jshint": "^0.11.3"
+    "grunt-contrib-jshint": "^0.11.3",
+    "hap-nodejs": "0.0.3",
+    "mocha": "^2.3.4"
   }
 }

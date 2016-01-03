@@ -1,4 +1,4 @@
-# homebridge-http
+# homebridge-http-blinkstick
 
 Supports https devices on the HomeBridge Platform and provides a readable
 callback for getting and setting the following characteristics to Homekit:
@@ -11,7 +11,7 @@ callback for getting and setting the following characteristics to Homekit:
 # Installation
 
 1. Install homebridge using: npm install -g homebridge
-2. Install homebridge-http using: npm install -g homebridge-http
+2. Install homebridge-http using: npm install -g homebridge-http-blinkstick
 3. Update your configuration file. See `sample-config.json` in this repository
 for a sample.
 
@@ -58,6 +58,14 @@ only read the settings, you may not change them.
             }
         },
 
+        "lock": {
+            "status": url-optional,
+            "secure": string-or-object,
+            "unsecure": {
+                url: string,
+                body: string
+            }
+        },
 
         "brightness": string-or-object,
         "color": {
@@ -109,3 +117,5 @@ string with no HTML markup.
 # TODO
 
 * Allow `brightness` WITH `color`
+* Perhaps validation of some sort?
+* _httprequest should check for non-200
