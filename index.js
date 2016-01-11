@@ -9,7 +9,7 @@ var request = require("request");
 module.exports = function(homebridge){
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-http-blinkstick", "HTTP-Blinkstick", HTTPBlinkstick);
+    homebridge.registerAccessory("homebridge-http", "HTTP-LED", HTTPLED);
 };
 
 /**
@@ -20,7 +20,7 @@ module.exports = function(homebridge){
  * @param {function} log Logging function
  * @param {object} config Your configuration object
  */
-function HTTPBlinkstick(log, config) {
+function HTTPLED(log, config) {
 
     // The logging function is required if you want your function to output
     // any information to the console in a controlled and organized manner.
