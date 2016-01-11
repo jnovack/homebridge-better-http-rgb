@@ -297,7 +297,7 @@ HTTPBlinkstick.prototype = {
                     callback(error);
                 } else {
                     var level = parseInt(responseBody);
-                    this.log("brightness state is currently %s", level);
+                    this.log("brightness is currently at %s", level);
                     callback(null, level);
                 }
             }.bind(this));
@@ -349,7 +349,7 @@ HTTPBlinkstick.prototype = {
 
         this._httpRequest(url, "", "GET", function(error, response, responseBody) {
             if (error) {
-                this.log('... getSaturation() failed: %s', error.message);
+                this.log('... getHue() failed: %s', error.message);
                 callback(error);
             } else {
                 var rgb = responseBody;
@@ -383,7 +383,7 @@ HTTPBlinkstick.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log("Setting Hue to %s ...", level);
+        this.log("Caching Hue as %s ...", level);
         this.cache.hue = level;
         callback();
 
@@ -446,14 +446,15 @@ HTTPBlinkstick.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log("Setting Saturation to %s ...", level);
+        this.log('Setting Saturation to %s ...', level);
         this.cache.saturation = level;
 
         if (!this.has.brightness) {
+            this.log('Setting Saturation to %s ...', level);
             callback();
             process.nextTick(function() { this._setRGB(callback); }.bind(this) );
         } else {
-            this.log('... has.brightness is set, deferring update.');
+            this.log('Caching Saturation as %s ...', level);
             callback();
         }
     },
@@ -471,14 +472,14 @@ HTTPBlinkstick.prototype = {
 
         var url = this.color.set_url.replace("%s", r + g + b);
 
-        // this.log("Setting RGB to %s ...", r + g + b);
+        this.log("_setRGB converting %s %s %s...", this.cache.hue, this.cache.saturation, this.cache.brightness);
 
         this._httpRequest(url, "", this.color.http_method, function(error, response, body) {
             if (error) {
                 this.log('... _setRGB() failed: %s', error);
                 callback(error);
             } else {
-                this.log('... _setRGB() succeeded to #%s', r + g + b);
+                this.log('... _setRGB() successfully set to #%s', r + g + b);
                 callback();
             }
         }.bind(this));
