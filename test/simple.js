@@ -29,7 +29,7 @@ var services = my.getServices();
 describe("HTTP Switch Accessory", function() {
     describe("constructor", function() {
         it("should have Characteristics", function() {
-            expect(services).to.include.something.that.has.property('characteristics').that.includes.something;
+            expect(services).to.include.something.that.has.property('characteristics').that.includes.something;  // jshint ignore:line
         });
 
         it("should have Characteristic 'On'", function() {

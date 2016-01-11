@@ -90,10 +90,11 @@ function HTTPLED(log, config) {
 /**
  *
  * @augments HTTPBlinkstick
+ */
 
-HTTPBlinkstick.prototype = {
+HTTPLED.prototype = {
 
-    //** Required Functions **//
+    /** Required Functions **/
     identify: function(callback) {
         this.log("Identify requested!");
         callback(); // success
