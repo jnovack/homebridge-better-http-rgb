@@ -386,7 +386,10 @@ HTTPLED.prototype = {
         }
         this.log("Caching Hue as %s ...", level);
         this.cache.hue = level;
-        callback();
+
+        this._setRGB(callback);
+
+        // callback();
 
         // var url = this.color.set_url.replace("%c", level);
         // this._httpRequest(url, "", this.color.http_method, function(error, response, body) {
@@ -447,17 +450,18 @@ HTTPLED.prototype = {
             callback(new Error("color issue."));
             return;
         }
-        this.log('Setting Saturation to %s ...', level);
         this.cache.saturation = level;
 
         if (!this.has.brightness) {
             this.log('Setting Saturation to %s ...', level);
-            callback();
-            process.nextTick(function() { this._setRGB(callback); }.bind(this) );
+            // callback();
+            // process.nextTick(function() { this._setRGB(callback); }.bind(this) );
         } else {
             this.log('Caching Saturation as %s ...', level);
-            callback();
+            // callback();
         }
+
+        this._setRGB(callback);
     },
 
     /**
