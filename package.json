@@ -1,7 +1,7 @@
 {
   "name": "homebridge-http-blinkstick",
   "version": "1.0.0",
-  "description": "plugin to control a web-based RGB LED Strip for Homebridge",
+  "description": "Homebridge plugin to control a web-based RGB device.",
   "license": "ISC",
   "keywords": [
     "homebridge-plugin"
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/jnovack/homebridge-http-blinkstick.git"
+    "url": "git://github.com/jnovack/homebridge-better-http-rgb.git"
   },
   "scripts": {
     "lint": "grunt lint",

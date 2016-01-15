@@ -1,15 +1,15 @@
 var Service, Characteristic;
-var request = require("request");
+var request = require('request');
 
 /**
  * @module homebridge
- * @param {object} homebridge Export the functions required to create a
+ * @param {object} homebridge Export functions required to create a
  *                            new instance of this plugin.
  */
 module.exports = function(homebridge){
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-http", "HTTP-LED", HTTPLED);
+    homebridge.registerAccessory('homebridge-better-http-rgb', 'HTTP-RGB', HTTP_RGB);
 };
 
 /**
@@ -20,20 +20,20 @@ module.exports = function(homebridge){
  * @param {function} log Logging function
  * @param {object} config Your configuration object
  */
-function HTTPLED(log, config) {
+function HTTP_RGB(log, config) {
 
     // The logging function is required if you want your function to output
     // any information to the console in a controlled and organized manner.
     this.log = log;
 
-    this.service                       = config.service                   || "Switch";
+    this.service                       = 'Light';
     this.name                          = config.name;
 
-    this.http_method                   = config.http_method               || "GET";
-    this.username                      = config.username                  || "";
-    this.password                      = config.password                  || "";
-    this.sendimmediately               = config.sendimmediately           || "";
+    this.http_method                   = config.http_method               || 'GET';
+    this.username                      = config.username                  || '';
+    this.password                      = config.password                  || '';
 
+    // Handle the basic on/off
     this.switch = { powerOn: {}, powerOff: {} };
     if (typeof config.switch === 'object') {
         this.switch.status                 = config.switch.status;
@@ -55,7 +55,7 @@ function HTTPLED(log, config) {
         }
     }
 
-    // Local caching of HSB color space for one RGB callback
+    // Local caching of HSB color space for RGB callback
     this.cache = {};
 
     // Handle brightness
@@ -89,46 +89,29 @@ function HTTPLED(log, config) {
 
 /**
  *
- * @augments HTTPBlinkstick
+ * @augments HTTP_RGB
  */
-
-HTTPLED.prototype = {
+HTTP_RGB.prototype = {
 
     /** Required Functions **/
     identify: function(callback) {
-        this.log("Identify requested!");
-        callback(); // success
+        this.log('Identify requested!');
+        callback();
     },
 
     getServices: function() {
-        // you can OPTIONALLY create an information service if you wish to override
-        // the default values for things like serial number, model, etc.
+        // You may OPTIONALLY define an information service if you wish to override
+        // default values for devices like serial number, model, etc.
         var informationService = new Service.AccessoryInformation();
 
         informationService
-            .setCharacteristic(Characteristic.Manufacturer, "HTTP Manufacturer")
-            .setCharacteristic(Characteristic.Model, "HTTP Model")
-            .setCharacteristic(Characteristic.SerialNumber, "HTTP Serial Number");
+            .setCharacteristic(Characteristic.Manufacturer, 'HTTP Manufacturer')
+            .setCharacteristic(Characteristic.Model, 'homebridge-better-http-rgb')
+            .setCharacteristic(Characteristic.SerialNumber, 'HTTP Serial Number');
 
         switch (this.service) {
-            case "Switch":
-                this.log('creating Switch');
-                var switchService = new Service.Switch(this.name);
-
-                if (this.switch.powerOn.status) {
-                    switchService
-                        .getCharacteristic(Characteristic.On)
-                        .on('get', this.getPowerState.bind(this))
-                        .on('set', this.setPowerState.bind(this));
-                } else {
-                    switchService
-                        .getCharacteristic(Characteristic.On)
-                        .on('set', this.setPowerState.bind(this));
-                }
-                return [switchService];
-
-            case "Light":
-                this.log('creating Light');
+            case 'Light':
+                this.log('creating Lightbulb');
                 var lightbulbService = new Service.Lightbulb(this.name);
 
                 if (this.switch.powerOn.status) {
@@ -142,6 +125,7 @@ HTTPLED.prototype = {
                         .on('set', this.setPowerState.bind(this));
                 }
 
+                // Handle brightness
                 if (this.has.brightness) {
                     this.log('... adding Brightness');
                     lightbulbService
@@ -165,8 +149,28 @@ HTTPLED.prototype = {
 
                 return [lightbulbService];
 
-            /* stub
-            case "Lock":
+            /*
+               These are included here as an example of what other
+               HomeKit-compatible devices can be.
+            */
+            /*
+            case 'Switch':
+                this.log('creating Switch');
+                var switchService = new Service.Switch(this.name);
+
+                if (this.switch.powerOn.status) {
+                    switchService
+                        .getCharacteristic(Characteristic.On)
+                        .on('get', this.getPowerState.bind(this))
+                        .on('set', this.setPowerState.bind(this));
+                } else {
+                    switchService
+                        .getCharacteristic(Characteristic.On)
+                        .on('set', this.setPowerState.bind(this));
+                }
+                return [switchService];
+
+            case 'Lock':
                 var lockService = new Service.LockMechanism(this.name);
 
                 lockService
@@ -181,7 +185,7 @@ HTTPLED.prototype = {
 
                 return [lockService];
 
-            case "Smoke":
+            case 'Smoke':
                 var smokeService = new Service.SmokeSensor(this.name);
 
                 smokeService
@@ -190,7 +194,7 @@ HTTPLED.prototype = {
 
                 return [smokeService];
 
-            case "Motion":
+            case 'Motion':
                 var motionService = new Service.MotionSensor(this.name);
 
                 motionService
@@ -199,7 +203,7 @@ HTTPLED.prototype = {
 
                 return [motionService];
 
-            case "Temp":
+            case 'Temp':
                 var temperatureService = new Service.TemperatureSensor(this.name);
 
                 temperatureService
@@ -223,35 +227,43 @@ HTTPLED.prototype = {
 
     //** Custom Functions **//
 
-    // Power
+    /**
+     * Gets power state of lightbulb.
+     *
+     * @param {function} callback The callback that handles the response.
+     */
     getPowerState: function(callback) {
         if (!this.switch.status) {
-            this.log.warn("Ignoring request, switch.status not defined.");
-            callback(new Error("No switch.status url defined."));
+            this.log.warn('Ignoring request, switch.status not defined.');
+            callback(new Error('No switch.status url defined.'));
             return;
         }
 
         var url = this.switch.status;
-        this.log("Getting power state");
 
-        this._httpRequest(url, "", "GET", function(error, response, responseBody) {
+        this._httpRequest(url, '', 'GET', function(error, response, responseBody) {
             if (error) {
                 this.log('getPowerState() failed: %s', error.message);
                 callback(error);
             } else {
                 var powerOn = parseInt(responseBody) > 0;
-                this.log("Power is currently %s", powerOn ? "ON" : "OFF");
+                this.log('power is currently %s', powerOn ? 'ON' : 'OFF');
                 callback(null, powerOn);
             }
         }.bind(this));
     },
 
+    /**
+     * Sets the power state of the lightbulb.
+     *
+     * @param {function} callback The callback that handles the response.
+     */
     setPowerState: function(state, callback) {
         var url;
         var body;
 
         if (!this.switch.powerOn.set_url || !this.switch.powerOff.set_url) {
-            this.log.warn("Ignoring request, powerOn.url or powerOff.url is not defined.");
+            this.log.warn('Ignoring request, powerOn.url or powerOff.url is not defined.');
             callback(new Error("The 'switch' section in your configuration is incorrect."));
             return;
         }
@@ -259,15 +271,9 @@ HTTPLED.prototype = {
         if (state) {
             url = this.switch.powerOn.set_url;
             body = this.switch.powerOn.body;
-            // this.log("Setting power to ON");
         } else {
             url = this.switch.powerOff.set_url;
             body = this.switch.powerOff.body;
-            // this.log("Setting power to OFF");
-        }
-
-        if (state && this.color) {
-            this._setRGB(callback);
         }
 
         this._httpRequest(url, body, this.http_method, function(error, response, responseBody) {
@@ -275,30 +281,32 @@ HTTPLED.prototype = {
                 this.log('setPowerState() failed: %s', error.message);
                 callback(error);
             } else {
-                this.log('setPowerState() successfully set to %s', state ? "ON" : "OFF");
-                callback();
+                this.log('setPowerState() successfully set to %s', state ? 'ON' : 'OFF');
+                callback(undefined, responseBody);
             }
         }.bind(this));
     },
 
-    // Brightness
+    /**
+     * Gets brightness of lightbulb.
+     *
+     * @param {function} callback The callback that handles the response.
+     */
     getBrightness: function(callback) {
         if (!this.has.brightness) {
-            this.log.warn("Ignoring request; No brightness defined.");
-            callback(new Error("Brightness not defined."));
+            this.log.warn("Ignoring request; No 'brightness' defined.");
+            callback(new Error("No 'brightness' defined in configuration"));
             return;
         }
-        // this.log("Getting Brightness level");
 
         if (this.brightness) {
-
-            this._httpRequest(this.brightness.status, "", "GET", function(error, response, responseBody) {
+            this._httpRequest(this.brightness.status, '', 'GET', function(error, response, responseBody) {
                 if (error) {
                     this.log('getBrightness() failed: %s', error.message);
                     callback(error);
                 } else {
                     var level = parseInt(responseBody);
-                    this.log("brightness is currently at %s", level);
+                    this.log('brightness is currently at %s %', level);
                     callback(null, level);
                 }
             }.bind(this));
@@ -307,25 +315,29 @@ HTTPLED.prototype = {
         }
     },
 
+    /**
+     * Sets the brightness of the lightbulb.
+     *
+     * @param {function} callback The callback that handles the response.
+     */
     setBrightness: function(level, callback) {
         if (!this.has.brightness) {
-            this.log.warn("Ignoring request; No brightness defined.");
-            callback(new Error("Brightness not defined."));
+            this.log.warn("Ignoring request; No 'brightness' defined.");
+            callback(new Error("No 'brightness' defined in configuration"));
             return;
         }
-        // this.log("Setting Brightness to %s", level);
         this.cache.brightness = level;
 
         // If achromatic, then update brightness, otherwise, update HSL as RGB
         if (!this.color) {
-            var url = this.brightness.set_url.replace("%s", level);
+            var url = this.brightness.set_url.replace('%s', level);
 
-            this._httpRequest(url, "", this.brightness.http_method, function(error, response, body) {
+            this._httpRequest(url, '', this.brightness.http_method, function(error, response, body) {
                 if (error) {
                     this.log('setBrightness() failed: %s', error);
                     callback(error);
                 } else {
-                    this.log('setBrightness() successfully set to %s', level);
+                    this.log('setBrightness() successfully set to %s %', level);
                     callback();
                 }
             }.bind(this));
@@ -335,20 +347,19 @@ HTTPLED.prototype = {
     },
 
     /**
-     * Gets Hue of lightbulb.
+     * Gets the hue of lightbulb.
      *
-     * @param {function} callback - The callback that handles the response.
+     * @param {function} callback The callback that handles the response.
      */
     getHue: function(callback) {
         if (this.color && typeof this.color.status !== 'string') {
             this.log.warn("Ignoring request; problem with 'color' variables.");
-            callback(new Error("color issue."));
+            callback(new Error("There was a problem parsing the 'color' section of your configuration."));
             return;
         }
-        // this.log("Getting hue ...");
         var url = this.color.status;
 
-        this._httpRequest(url, "", "GET", function(error, response, responseBody) {
+        this._httpRequest(url, '', 'GET', function(error, response, responseBody) {
             if (error) {
                 this.log('... getHue() failed: %s', error.message);
                 callback(error);
@@ -362,7 +373,7 @@ HTTPLED.prototype = {
 
                 var hue = levels[0];
 
-                this.log("... hue is currently %s", hue);
+                this.log('... hue is currently %s', hue);
                 this.cache.hue = hue;
                 callback(null, hue);
             }
@@ -370,54 +381,36 @@ HTTPLED.prototype = {
     },
 
     /**
-     * Sets the hue of the lightbulb.  Within the context of the iOS color
-     * picker, all three (hue, saturation, and if allowed, brightness) will
-     * be set individually. There is no instance where Hue will be set but
-     * Saturation is not, so we will do nothing except update the cache here.
+     * Sets the hue of the lightbulb.
      *
-     * @summary Sets the hue of lightbulb.
-     * @param {function} callback - The callback that handles the response.
+     * @param {function} callback The callback that handles the response.
      */
     setHue: function(level, callback) {
         if (this.color && typeof this.color.set_url !== 'string') {
             this.log.warn("Ignoring request; problem with 'color' variables.");
-            callback(new Error("color issue."));
+            callback(new Error("There was a problem parsing the 'color' section of your configuration."));
             return;
         }
-        this.log("Caching Hue as %s ...", level);
+        this.log('Caching Hue as %s ...', level);
         this.cache.hue = level;
 
         this._setRGB(callback);
-
-        // callback();
-
-        // var url = this.color.set_url.replace("%c", level);
-        // this._httpRequest(url, "", this.color.http_method, function(error, response, body) {
-        //   if (error) {
-        //     this.log('... setHue() failed: %s', error);
-        //     callback(error);
-        //   } else {
-        //     this.log('... setHue() succeeded!');
-        //     callback();
-        //   }
-        // }.bind(this));
     },
 
     /**
-     * Gets the saturation level of lightbulb.
+     * Gets the saturation of lightbulb.
      *
-     * @param {function} callback - The callback that handles the response.
+     * @param {function} callback The callback that handles the response.
      */
     getSaturation: function(callback) {
         if (this.color && typeof this.color.status !== 'string') {
             this.log.warn("Ignoring request; problem with 'color' variables.");
-            callback(new Error("color issue."));
+            callback(new Error("There was a problem parsing the 'color' section of your configuration."));
             return;
         }
-        // this.log("Getting saturation ...");
         var url = this.color.status;
 
-        this._httpRequest(url, "", "GET", function(error, response, responseBody) {
+        this._httpRequest(url, '', 'GET', function(error, response, responseBody) {
             if (error) {
                 this.log('... getSaturation() failed: %s', error.message);
                 callback(error);
@@ -431,7 +424,7 @@ HTTPLED.prototype = {
 
                 var saturation = levels[1];
 
-                this.log("... saturation is currently %s", saturation);
+                this.log('... saturation is currently %s', saturation);
                 this.cache.saturation = saturation;
                 callback(null, saturation);
             }
@@ -439,35 +432,27 @@ HTTPLED.prototype = {
     },
 
     /**
-     * Sets the saturation level of the current color.
+     * Sets the saturation of the lightbulb.
      *
-     * @param {number} level - The saturation of the new call.
-     * @param {function} callback - The callback that handles the response.
+     * @param {number} level The saturation of the new call.
+     * @param {function} callback The callback that handles the response.
      */
     setSaturation: function(level, callback) {
         if (this.color && typeof this.color.set_url !== 'string') {
             this.log.warn("Ignoring request; problem with 'color' variables.");
-            callback(new Error("color issue."));
+            callback(new Error("There was a problem parsing the 'color' section of your configuration."));
             return;
         }
+        this.log('Caching Saturation as %s ...', level);
         this.cache.saturation = level;
-
-        if (!this.has.brightness) {
-            this.log('Setting Saturation to %s ...', level);
-            // callback();
-            // process.nextTick(function() { this._setRGB(callback); }.bind(this) );
-        } else {
-            this.log('Caching Saturation as %s ...', level);
-            // callback();
-        }
 
         this._setRGB(callback);
     },
 
     /**
-     * Sets the rgb of the device based on the cached hsb.
+     * Sets the RGB value of the device based on the cached HSB values.
      *
-     * @param {function} callback - The callback that handles the response.
+     * @param {function} callback The callback that handles the response.
      */
     _setRGB: function(callback) {
         var rgb = this._hsvToRgb(this.cache.hue, this.cache.saturation, this.cache.brightness);
@@ -475,11 +460,11 @@ HTTPLED.prototype = {
         var g = this._decToHex(rgb.g);
         var b = this._decToHex(rgb.b);
 
-        var url = this.color.set_url.replace("%s", r + g + b);
+        var url = this.color.set_url.replace('%s', r + g + b);
 
-        this.log("_setRGB converting %s %s %s...", this.cache.hue, this.cache.saturation, this.cache.brightness);
+        this.log('_setRGB converting H:%s S:%s B:%s to RGB:%s ...', this.cache.hue, this.cache.saturation, this.cache.brightness, r + g + b);
 
-        this._httpRequest(url, "", this.color.http_method, function(error, response, body) {
+        this._httpRequest(url, '', this.color.http_method, function(error, response, body) {
             if (error) {
                 this.log('... _setRGB() failed: %s', error);
                 callback(error);
@@ -488,10 +473,17 @@ HTTPLED.prototype = {
                 callback();
             }
         }.bind(this));
-
     },
 
-    //** Utility Functions **/
+    /** Utility Functions **/
+    /**
+     * Perform an HTTP request.
+     *
+     * @param {string} url URL to call.
+     * @param {string} body Body to send.
+     * @param {method} method Method to use.
+     * @param {function} callback The callback that handles the response.
+     */
     _httpRequest: function(url, body, method, callback) {
         request({
             url: url,
@@ -500,8 +492,7 @@ HTTPLED.prototype = {
             rejectUnauthorized: false,
             auth: {
                 user: this.username,
-                pass: this.password,
-                sendImmediately: this.sendimmediately
+                pass: this.password
             }
         },
         function(error, response, body) {
@@ -515,10 +506,10 @@ HTTPLED.prototype = {
      * Assumes h in [0..360], and s and l in [0..100] and
      * returns r, g, and b in [0..255].
      *
-     * @param   Number  h       The hue
-     * @param   Number  s       The saturation
-     * @param   Number  l       The lightness
-     * @return  Array           The RGB representation
+     * @param   {Number}  h       The hue
+     * @param   {Number}  s       The saturation
+     * @param   {Number}  l       The lightness
+     * @return  {Array}           The RGB representation
      */
     _hsvToRgb: function(h, s, v) {
         var r, g, b, i, f, p, q, t;
@@ -550,10 +541,10 @@ HTTPLED.prototype = {
      * Assumes r, g, and b are in [0..255] and
      * returns h in [0..360], and s and l in [0..100].
      *
-     * @param   Number  r       The red color value
-     * @param   Number  g       The green color value
-     * @param   Number  b       The blue color value
-     * @return  Array           The HSL representation
+     * @param   {Number}  r       The red color value
+     * @param   {Number}  g       The green color value
+     * @param   {Number}  b       The blue color value
+     * @return  {Array}           The HSL representation
      */
     _rgbToHsl: function(r, g, b){
         r /= 255;
@@ -585,16 +576,16 @@ HTTPLED.prototype = {
      * Converts a decimal number into a hexidecimal string, with optional
      * padding (default 2 characters).
      *
-     * @param   Number d        Decimal number
-     * @param   String padding  Padding for the string
-     * @return  String          "0" padded hexidecimal number
+     * @param   {Number} d        Decimal number
+     * @param   {String} padding  Padding for the string
+     * @return  {String}          '0' padded hexidecimal number
      */
     _decToHex: function(d, padding) {
         var hex = Number(d).toString(16);
-        padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
+        padding = typeof (padding) === 'undefined' || padding === null ? padding = 2 : padding;
 
         while (hex.length < padding) {
-            hex = "0" + hex;
+            hex = '0' + hex;
         }
 
         return hex;
