@@ -114,7 +114,7 @@ HTTP_RGB.prototype = {
                 this.log('creating Lightbulb');
                 var lightbulbService = new Service.Lightbulb(this.name);
 
-                if (this.switch.powerOn.status) {
+                if (this.switch.status) {
                     lightbulbService
                         .getCharacteristic(Characteristic.On)
                         .on('get', this.getPowerState.bind(this))

@@ -174,6 +174,16 @@ string with no HTML markup.
 * `brightness.status` expects a number from 0 to 100.
 * `color.status` expects a 6-digit hexidemial number.
 
+## http-led-controller
+
+This package was developed in tandem with
+[jnovack/http-led-controller](https://github.com/jnovack/http-led-controller).
+
+I needed a way to control my [blinksticks](https://www.blinkstick.com/) from
+HomeKit/HomeBridge.  After developing this package, I had to have a backend in
+the event someone's HomeKit/HomeBridge is on a different server, or in my case,
+there are 4-5 different Raspberry Pi's running blinksticks around my house.
+
 
 # Why 'better'?
 
