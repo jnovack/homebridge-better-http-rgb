@@ -581,7 +581,7 @@ HTTP_RGB.prototype = {
      * @return  {String}          '0' padded hexidecimal number
      */
     _decToHex: function(d, padding) {
-        var hex = Number(d).toString(16);
+        var hex = Number(d).toString(16).toUpperCase();
         padding = typeof (padding) === 'undefined' || padding === null ? padding = 2 : padding;
 
         while (hex.length < padding) {
