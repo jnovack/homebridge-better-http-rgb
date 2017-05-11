@@ -446,7 +446,8 @@ HTTP_RGB.prototype = {
         this.log('Caching Saturation as %s ...', level);
         this.cache.saturation = level;
 
-        this._setRGB(callback);
+        //this._setRGB(callback);
+        callback();
     },
 
     /**
