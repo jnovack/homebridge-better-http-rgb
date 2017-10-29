@@ -395,10 +395,10 @@ HTTP_RGB.prototype = {
         this.log('Caching Hue as %s ...', level);
         this.cache.hue = level;
         if (this.cacheUpdated) {
-          this._setRGB(callback);
+            this._setRGB(callback);
         } else {
-          this.cacheUpdated = true;
-          callback();
+            this.cacheUpdated = true;
+            callback();
         }
     },
 
@@ -451,10 +451,10 @@ HTTP_RGB.prototype = {
         this.log('Caching Saturation as %s ...', level);
         this.cache.saturation = level;
         if (this.cacheUpdated) {
-          this._setRGB(callback);
+            this._setRGB(callback);
         } else {
-          this.cacheUpdated = true;
-          callback();
+            this.cacheUpdated = true;
+            callback();
         }
     },
 
