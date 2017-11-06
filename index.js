@@ -57,6 +57,7 @@ function HTTP_RGB(log, config) {
 
     // Local caching of HSB color space for RGB callback
     this.cache = {};
+    this.cacheUpdated = false;
 
     // Handle brightness
     if (typeof config.brightness === 'object') {
@@ -393,8 +394,12 @@ HTTP_RGB.prototype = {
         }
         this.log('Caching Hue as %s ...', level);
         this.cache.hue = level;
-
-        this._setRGB(callback);
+        if (this.cacheUpdated) {
+            this._setRGB(callback);
+        } else {
+            this.cacheUpdated = true;
+            callback();
+        }
     },
 
     /**
@@ -445,8 +450,12 @@ HTTP_RGB.prototype = {
         }
         this.log('Caching Saturation as %s ...', level);
         this.cache.saturation = level;
-
-        this._setRGB(callback);
+        if (this.cacheUpdated) {
+            this._setRGB(callback);
+        } else {
+            this.cacheUpdated = true;
+            callback();
+        }
     },
 
     /**
@@ -461,6 +470,7 @@ HTTP_RGB.prototype = {
         var b = this._decToHex(rgb.b);
 
         var url = this.color.set_url.replace('%s', r + g + b);
+        this.cacheUpdated = false;
 
         this.log('_setRGB converting H:%s S:%s B:%s to RGB:%s ...', this.cache.hue, this.cache.saturation, this.cache.brightness, r + g + b);
 
