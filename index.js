@@ -328,8 +328,8 @@ HTTP_RGB.prototype = {
         }
         this.cache.brightness = level;
 
-        // If achromatic, then update brightness, otherwise, update HSL as RGB
-        if (!this.color) {
+        // If achromatic or color.brightness is false, update brightness, otherwise, update HSL as RGB
+        if (!this.color || !this.color.brightness) {
             var url = this.brightness.set_url.replace('%s', level);
 
             this._httpRequest(url, '', this.brightness.http_method, function(error, response, body) {
