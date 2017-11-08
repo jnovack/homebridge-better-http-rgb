@@ -149,16 +149,11 @@ HTTP_RGB.prototype = {
 
                 return [lightbulbService];
 
-            /*
-               These are included here as an example of what other
-               HomeKit-compatible devices can be.
-            */
-
             case 'Switch':
                 this.log('creating Switch');
                 var switchService = new Service.Switch(this.name);
 
-                if (this.switch.powerOn.status) {
+                if (this.switch.status) {
                     switchService
                         .getCharacteristic(Characteristic.On)
                         .on('get', this.getPowerState.bind(this))
@@ -170,6 +165,12 @@ HTTP_RGB.prototype = {
                 }
                 return [switchService];
 
+            /*
+               These are included here as an example of what other
+               HomeKit-compatible devices can be.
+            */
+            /*
+            
             case 'Lock':
                 var lockService = new Service.LockMechanism(this.name);
 
@@ -185,7 +186,6 @@ HTTP_RGB.prototype = {
 
                 return [lockService];
                 
-            /*
             case 'Smoke':
                 var smokeService = new Service.SmokeSensor(this.name);
 
