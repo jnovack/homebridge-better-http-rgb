@@ -26,7 +26,7 @@ function HTTP_RGB(log, config) {
     // any information to the console in a controlled and organized manner.
     this.log = log;
 
-    this.service                       = 'Light';
+    this.service                       = config.service;
     this.name                          = config.name;
 
     this.http_method                   = config.http_method               || 'GET';
@@ -153,7 +153,7 @@ HTTP_RGB.prototype = {
                These are included here as an example of what other
                HomeKit-compatible devices can be.
             */
-            /*
+
             case 'Switch':
                 this.log('creating Switch');
                 var switchService = new Service.Switch(this.name);
@@ -184,7 +184,8 @@ HTTP_RGB.prototype = {
                     .on('set', this.setLockTarget.bind(this));
 
                 return [lockService];
-
+                
+            /*
             case 'Smoke':
                 var smokeService = new Service.SmokeSensor(this.name);
 
