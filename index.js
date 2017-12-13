@@ -185,7 +185,7 @@ HTTP_RGB.prototype = {
                     .on('set', this.setLockTarget.bind(this));
 
                 return [lockService];
-                
+
             case 'Smoke':
                 var smokeService = new Service.SmokeSensor(this.name);
 
