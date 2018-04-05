@@ -4,8 +4,18 @@ module.exports = function() {
     var app = express();
 
     var cache = {
-        power: 0
+        power: 0,
+        color: '00aa00',
+        brightness: 50
     };
+
+    app.get("/brightness/status", function(req, res) {
+        res.send(cache.brightness.toString());
+    });
+
+    app.get("/color/status", function(req, res) {
+        res.send(cache.color.toString());
+    });
 
     app.get("/power/status", function(req, res) {
         res.send(cache.power.toString());
