@@ -1,5 +1,7 @@
 # homebridge-better-http-rgb
 
+[![NPM](https://img.shields.io/npm/v/homebridge-better-http-rgb.svg)](https://www.npmjs.com/package/homebridge-better-http-rgb)
+
 Supports RGB http(s) devices on the HomeBridge Platform and provides a readable
 callback for getting and setting the following characteristics to Homekit:
 
