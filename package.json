@@ -1,6 +1,6 @@
 {
   "name": "homebridge-better-http-rgb",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Homebridge plugin to control a web-based RGB device.",
   "license": "ISC",
   "keywords": [

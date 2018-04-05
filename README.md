@@ -39,10 +39,13 @@ can either be a `string` or an `object`.  If it is a `string`, it is filled in
 as the `status` and the other fields are left blank. When this is the case, you
 can only read the settings, you may not change them.
 
+`service` is one of `['Light', 'Switch']`.
+
 
     {
         "accessory": "HTTP-RGB",
         "name": string,
+        "service": string,
 
         "http_method": string-optional,
         "username": string-optional,
@@ -85,6 +88,7 @@ can only read the settings, you may not change them.
         {
             "accessory": "HTTP-RGB",
             "name": "RGB Led Strip",
+            "service": "Light",
 
             "switch": {
                 "status": "http://localhost/api/v1/status",
@@ -111,6 +115,7 @@ can only read the settings, you may not change them.
         {
             "accessory": "HTTP-RGB",
             "name": "Single Color Light",
+            "service": "Light",
 
             "switch": {
                 "status": "http://localhost/api/v1/status",
@@ -126,6 +131,7 @@ can only read the settings, you may not change them.
         {
             "accessory": "HTTP-RGB",
             "name": "Single Color Light",
+            "service": "Light",
 
             "switch": {
                 "status": "http://localhost/api/v1/status",
@@ -146,6 +152,7 @@ can only read the settings, you may not change them.
         {
             "accessory": "HTTP-RGB",
             "name": "Single Color Light",
+            "service": "Light",
 
             "switch": {
                 "status": "http://localhost/api/v1/status",

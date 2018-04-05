@@ -1,6 +1,7 @@
 // Generate Config
 var config = function(port) {
     return {
+        "service": "Light",
         "name": "Test Accessory",
         "switch": {
             "status": "http://localhost:"+port+"/power/status",
