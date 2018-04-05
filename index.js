@@ -26,7 +26,7 @@ function HTTP_RGB(log, config) {
     // any information to the console in a controlled and organized manner.
     this.log = log;
 
-    this.service                       = 'Light';
+    this.service                       = config.service;
     this.name                          = config.name;
 
     this.http_method                   = config.http_method               || 'GET';
@@ -150,16 +150,11 @@ HTTP_RGB.prototype = {
 
                 return [lightbulbService];
 
-            /*
-               These are included here as an example of what other
-               HomeKit-compatible devices can be.
-            */
-            /*
             case 'Switch':
                 this.log('creating Switch');
                 var switchService = new Service.Switch(this.name);
 
-                if (this.switch.powerOn.status) {
+                if (this.switch.status) {
                     switchService
                         .getCharacteristic(Characteristic.On)
                         .on('get', this.getPowerState.bind(this))
@@ -171,6 +166,12 @@ HTTP_RGB.prototype = {
                 }
                 return [switchService];
 
+            /*
+               These are included here as an example of what other
+               HomeKit-compatible devices can be.
+            */
+            /*
+            
             case 'Lock':
                 var lockService = new Service.LockMechanism(this.name);
 
@@ -329,8 +330,8 @@ HTTP_RGB.prototype = {
         }
         this.cache.brightness = level;
 
-        // If achromatic, then update brightness, otherwise, update HSL as RGB
-        if (!this.color) {
+        // If achromatic or color.brightness is false, update brightness, otherwise, update HSL as RGB
+        if (!this.color || !this.color.brightness) {
             var url = this.brightness.set_url.replace('%s', level);
 
             this._httpRequest(url, '', this.brightness.http_method, function(error, response, body) {
