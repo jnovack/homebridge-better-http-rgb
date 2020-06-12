@@ -1,6 +1,14 @@
 # homebridge-better-http-rgb
 
-[![NPM](https://img.shields.io/npm/v/homebridge-better-http-rgb.svg)](https://www.npmjs.com/package/homebridge-better-http-rgb)
+![Project is NOT Active](https://img.shields.io/badge/Status-%20%E2%9D%8C%20Archived-critical)
+
+**2020-06 Update:** *Please note, this project is archived and no longer being maintained.  I no longer use Homebridge.  There are a number of forks which may provide you a better more up-to-date experience.  Two of which I have found with significant improvements are listed below.*
+
+**Forks**
+- https://github.com/anli5005/homebridge-better-http-rgb/
+- https://github.com/QuickSander/homebridge-http-rgb-push/
+
+----
 
 Supports RGB http(s) devices on the HomeBridge Platform and provides a readable
 callback for getting and setting the following characteristics to Homekit:
@@ -9,7 +17,6 @@ callback for getting and setting the following characteristics to Homekit:
 * Characteristic.Brightness
 * Characteristic.Hue
 * Characteristic.Saturation
-
 
 # Installation
 
