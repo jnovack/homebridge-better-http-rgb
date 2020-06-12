@@ -5,7 +5,7 @@
 **2020-06 Update:** *Please note, this project is archived and no longer being maintained.  I no longer use Homebridge.  There are a number of forks which may provide you a better more up-to-date experience.  Two of which I have found with significant improvements are listed below.*
 
 **Forks**
-- https://github.com/anli5005/homebridge-better-http-rgb/
+- https://github.com/BCornelsen/homebridge-wled
 - https://github.com/QuickSander/homebridge-http-rgb-push/
 
 ----
